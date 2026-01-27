@@ -3,13 +3,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { commonConfig, databaseConfig } from './config'
+import { commonConfig, databaseConfig, jwtConfig } from './config'
+import { SessionsModule } from './modules/sessions/sessions.module'
+import { UsersModule } from './modules/users/users.module'
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [commonConfig, databaseConfig],
+            load: [commonConfig, databaseConfig, jwtConfig],
             envFilePath: '.env',
         }),
 
@@ -27,6 +29,9 @@ import { commonConfig, databaseConfig } from './config'
                 synchronize: configService.get<boolean>('database.synchronize'),
             }),
         }),
+
+        UsersModule,
+        SessionsModule,
     ],
     controllers: [AppController],
     providers: [AppService],
