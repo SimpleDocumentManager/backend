@@ -1,0 +1,13 @@
+Dockerfile
+.dockerignore
+.git
+node_modules
+dist
+npm-debug.log
+coverage
+.env
+.env.*
+.DS_Store
+.vscode
+.idea
+*.log

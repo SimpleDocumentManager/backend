@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+npm run lint:check || (
+    echo "Lint check failed. Please run 'npm run lint' to fix the issues."
+    exit 1
+)
+
+npm run format:check || (
+    echo "Format check failed. Please run 'npm run format' to fix the issues."
+    exit 1
+)
