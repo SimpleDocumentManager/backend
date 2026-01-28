@@ -11,6 +11,7 @@ import * as fsPromises from 'fs/promises'
 import { Stream } from 'stream'
 import { Response } from 'express'
 import { QueryStorageDto } from './dto/query-storage.dto'
+import { User } from 'src/modules/users/entities/user.entity'
 
 jest.mock('fs')
 jest.mock('fs/promises')
@@ -20,6 +21,8 @@ describe('StoragesService', () => {
     let entityManager: EntityManager
     let dataSource: DataSource
     let repository: Repository<Storage>
+
+    const uploader = { id: '123', name: 'Test' } as User
 
     const mockStorageUrl = 'http://localhost:3000/storage'
 
@@ -95,6 +98,7 @@ describe('StoragesService', () => {
                 filename: 'images',
                 folder: 'uploads',
                 isFolder: true,
+                uploaderId: uploader.id,
             } as Storage
 
             mockRepository.exists.mockResolvedValue(false) // Folder does not exist
@@ -102,7 +106,7 @@ describe('StoragesService', () => {
             mockEntityManager.create.mockReturnValue(expectedStorage)
             mockEntityManager.save.mockResolvedValue(expectedStorage)
 
-            const result = await service.createFolder(createFolderDto)
+            const result = await service.createFolder(createFolderDto, uploader)
 
             expect(dataSource.transaction).toHaveBeenCalled()
             expect(entityManager.create).toHaveBeenCalledWith(
@@ -111,6 +115,7 @@ describe('StoragesService', () => {
                     filename: createFolderDto.name,
                     folder: createFolderDto.dir,
                     isFolder: true,
+                    uploaderId: uploader.id,
                 }),
             )
             expect(result).toEqual(expectedStorage)
@@ -119,7 +124,7 @@ describe('StoragesService', () => {
         it('should throw ConflictException if folder already exists', async () => {
             mockRepository.exists.mockResolvedValue(true)
 
-            await expect(service.createFolder(createFolderDto)).rejects.toThrow(ConflictException)
+            await expect(service.createFolder(createFolderDto, uploader)).rejects.toThrow(ConflictException)
         })
 
         it('should handle parent directory validation', async () => {
@@ -129,7 +134,7 @@ describe('StoragesService', () => {
             // Mock parent found but is a file
             mockEntityManager.findOne.mockResolvedValue({ isFolder: false } as Storage)
 
-            await expect(service.createFolder(dto)).rejects.toThrow(ForbiddenException)
+            await expect(service.createFolder(dto, uploader)).rejects.toThrow(ForbiddenException)
         })
     })
 
@@ -147,15 +152,21 @@ describe('StoragesService', () => {
                 id: '1',
                 filename: 'test.jpg',
                 isFolder: false,
+                uploaderId: uploader.id,
             } as Storage
 
             mockEntityManager.findOne.mockResolvedValue(null)
             mockEntityManager.create.mockReturnValue(expectedStorage)
             mockEntityManager.save.mockResolvedValue(expectedStorage)
 
-            const result = await service.upload(mockFile, uploadDto)
+            const result = await service.upload(mockFile, uploadDto, uploader)
 
-            expect(entityManager.create).toHaveBeenCalled()
+            expect(entityManager.create).toHaveBeenCalledWith(
+                Storage,
+                expect.objectContaining({
+                    uploaderId: uploader.id,
+                }),
+            )
             expect(fsPromises.writeFile).toHaveBeenCalled()
             expect(result).toEqual(expectedStorage)
         })
@@ -174,11 +185,16 @@ describe('StoragesService', () => {
                 if (opts?.where?.filename === 'test.jpg') return Promise.resolve(existingStorage)
                 return Promise.resolve(null)
             })
-            mockEntityManager.save.mockResolvedValue({ ...existingStorage, size: 1024 } as Storage)
+            mockEntityManager.save.mockResolvedValue({
+                ...existingStorage,
+                size: 1024,
+                uploaderId: uploader.id,
+            } as Storage)
 
-            await service.upload(mockFile, uploadDto)
+            await service.upload(mockFile, uploadDto, uploader)
 
             expect(existingStorage.size).toBe(1024)
+            expect(existingStorage.uploaderId).toBe(uploader.id)
             expect(entityManager.save).toHaveBeenCalledWith(existingStorage)
             expect(fsPromises.writeFile).toHaveBeenCalled()
         })
@@ -192,7 +208,7 @@ describe('StoragesService', () => {
 
             mockEntityManager.findOne.mockResolvedValue(folderStorage)
 
-            await expect(service.upload(mockFile, uploadDto)).rejects.toThrow(ConflictException)
+            await expect(service.upload(mockFile, uploadDto, uploader)).rejects.toThrow(ConflictException)
         })
 
         it('should throw InternalServerErrorException if disk write fails', async () => {
@@ -201,7 +217,7 @@ describe('StoragesService', () => {
             mockEntityManager.save.mockResolvedValue({ id: '1' } as Storage)
             ;(fsPromises.writeFile as jest.Mock).mockRejectedValue(new Error('Disk error'))
 
-            await expect(service.upload(mockFile, uploadDto)).rejects.toThrow(InternalServerErrorException)
+            await expect(service.upload(mockFile, uploadDto, uploader)).rejects.toThrow(InternalServerErrorException)
         })
     })
 
@@ -216,6 +232,7 @@ describe('StoragesService', () => {
 
             expect(repository.find).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    relations: { uploader: true },
                     take: 20,
                 }),
             )
@@ -232,6 +249,7 @@ describe('StoragesService', () => {
 
             expect(repository.find).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    relations: { uploader: true },
                     where: { folder: 'uploads' },
                 }),
             )

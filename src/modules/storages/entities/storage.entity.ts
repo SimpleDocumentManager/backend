@@ -1,4 +1,15 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm'
+import { User } from 'src/modules/users/entities/user.entity'
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    Index,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    Unique,
+    UpdateDateColumn,
+} from 'typeorm'
 
 @Entity('storages')
 @Unique(['folder', 'filename'])
@@ -25,6 +36,13 @@ export class Storage {
     @Column({ name: 'size' })
     /** Size of the file in bytes. */
     size: number
+
+    @ManyToOne(() => User, (user) => user.id)
+    @JoinColumn({ name: 'uploader_id' })
+    uploader: User
+
+    @Column({ name: 'uploader_id', type: 'varchar', length: 36 })
+    uploaderId: string
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date

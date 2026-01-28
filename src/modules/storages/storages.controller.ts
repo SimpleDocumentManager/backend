@@ -21,6 +21,8 @@ import { QueryStorageDto } from 'src/modules/storages/dto/query-storage.dto'
 import { UploadStorageDto } from 'src/modules/storages/dto/upload-storage.dto'
 import { formatResponse } from 'src/utils/response'
 import { StoragesService } from './storages.service'
+import { CurrentUser } from 'src/modules/sessions/decorators'
+import { User } from 'src/modules/users/entities/user.entity'
 
 @Controller('storages')
 export class StoragesController {
@@ -30,16 +32,16 @@ export class StoragesController {
     @UseInterceptors(FileInterceptor('file'))
     @HttpCode(HttpStatus.CREATED)
     @JwtAuthGuard()
-    async upload(@UploadedFile() file: Express.Multer.File, @Body() dto: UploadStorageDto) {
-        const storage = await this.storagesService.upload(file, dto)
+    async upload(@UploadedFile() file: Express.Multer.File, @Body() dto: UploadStorageDto, @CurrentUser() user: User) {
+        const storage = await this.storagesService.upload(file, dto, user)
         return formatResponse(storage, HttpStatus.CREATED, 'Created')
     }
 
     @Post('folder')
     @HttpCode(HttpStatus.CREATED)
     @JwtAuthGuard()
-    async createFolder(@Body() dto: CreateFolderDto) {
-        const storage = await this.storagesService.createFolder(dto)
+    async createFolder(@Body() dto: CreateFolderDto, @CurrentUser() user: User) {
+        const storage = await this.storagesService.createFolder(dto, user)
         return formatResponse(storage, HttpStatus.CREATED, 'Created')
     }
 

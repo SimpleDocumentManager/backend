@@ -17,6 +17,7 @@ import { sanitizePath } from 'src/utils/path'
 import { DataSource, EntityManager, FindManyOptions, ILike, Like, Repository } from 'typeorm'
 import { Storage } from './entities/storage.entity'
 import { CreateFolderDto } from 'src/modules/storages/dto/create-folder.dto'
+import { User } from 'src/modules/users/entities/user.entity'
 
 @Injectable()
 export class StoragesService {
@@ -41,7 +42,7 @@ export class StoragesService {
         }
     }
 
-    async createFolder(dto: CreateFolderDto): Promise<Storage> {
+    async createFolder(dto: CreateFolderDto, uploader: User): Promise<Storage> {
         const existingFolder = await this.storageRepository.exists({
             where: {
                 folder: dto.dir,
@@ -55,7 +56,7 @@ export class StoragesService {
         return this.dataSource.transaction(async (manager) => {
             const path = sanitizePath(`${dto.dir}/${dto.name}`)
 
-            await this.createParentDirectoriesInTx(manager, dto.dir)
+            await this.createParentDirectoriesInTx(manager, dto.dir, uploader)
 
             const storage = manager.create(Storage, {
                 filename: dto.name,
@@ -64,17 +65,18 @@ export class StoragesService {
                 mimeType: 'folder',
                 isFolder: true,
                 size: 0,
+                uploaderId: uploader.id,
             })
 
             return manager.save(storage)
         })
     }
 
-    async upload(file: Express.Multer.File, dto: UploadStorageDto): Promise<Storage> {
+    async upload(file: Express.Multer.File, dto: UploadStorageDto, uploader: User): Promise<Storage> {
         return this.dataSource.transaction(async (manager) => {
             const path = sanitizePath(`${dto.dir}/${file.originalname}`)
 
-            await this.createParentDirectoriesInTx(manager, dto.dir)
+            await this.createParentDirectoriesInTx(manager, dto.dir, uploader)
 
             let storage = await manager.findOne(Storage, {
                 where: { filename: file.originalname, folder: dto.dir },
@@ -87,6 +89,7 @@ export class StoragesService {
 
                 storage.size = file.size
                 storage.fullUrl = `${this.storageUrl}${path}`
+                storage.uploaderId = uploader.id
             } else {
                 storage = manager.create(Storage, {
                     filename: file.originalname,
@@ -95,6 +98,7 @@ export class StoragesService {
                     mimeType: file.mimetype,
                     isFolder: false,
                     size: file.size,
+                    uploaderId: uploader.id,
                 })
             }
 
@@ -113,7 +117,10 @@ export class StoragesService {
     }
 
     async findAll(dto: QueryStorageDto): Promise<Storage[]> {
-        const options: FindManyOptions = {}
+        const options: FindManyOptions<Storage> = {
+            relations: { uploader: true },
+            select: { uploader: { id: true, name: true, username: true } },
+        }
 
         if (dto.search) {
             options.where = {
@@ -153,7 +160,7 @@ export class StoragesService {
         createReadStream(diskPath).pipe(res)
     }
 
-    private async createParentDirectoriesInTx(manager: EntityManager, dir: string) {
+    private async createParentDirectoriesInTx(manager: EntityManager, dir: string, uploader: User) {
         const folders = dir.split('/')
 
         await Promise.all(
@@ -182,6 +189,7 @@ export class StoragesService {
                     mimeType: 'folder',
                     isFolder: true,
                     size: 0,
+                    uploaderId: uploader.id,
                 })
             }),
         )
