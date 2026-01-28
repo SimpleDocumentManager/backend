@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import { LoginDto } from 'src/modules/sessions/dto/login.dto'
-import { JwtAuthGuard } from 'src/modules/sessions/guards/jwt-auth.guard'
+import { JwtAuthGuard, JwtRefreshAuthGuard } from 'src/modules/sessions/guards/jwt-auth.guard'
 import { User } from 'src/modules/users/entities/user.entity'
 import { CurrentUser } from './decorators'
 import { SessionsService } from './sessions.service'
@@ -23,7 +23,7 @@ export class SessionsController {
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
-    @JwtAuthGuard()
+    @JwtRefreshAuthGuard()
     refresh(@CurrentUser() user: User) {
         return this.sessionsService.refreshToken(user.id, user.username)
     }

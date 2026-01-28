@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { StringValue } from 'ms'
+import { JwtRefreshStrategy } from 'src/modules/sessions/strategies/jwt-refresh.strategy'
 import { UsersModule } from '../users/users.module'
-import { SessionsService } from './sessions.service'
 import { SessionsController } from './sessions.controller'
+import { SessionsService } from './sessions.service'
 import { JwtStrategy } from './strategies/jwt.strategy'
 
 @Module({
@@ -24,7 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy'
         }),
     ],
     controllers: [SessionsController],
-    providers: [SessionsService, JwtStrategy],
-    exports: [SessionsService, JwtStrategy],
+    providers: [SessionsService, JwtStrategy, JwtRefreshStrategy],
+    exports: [SessionsService],
 })
 export class SessionsModule {}

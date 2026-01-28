@@ -5,10 +5,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UsersService } from '../../users/users.service'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
 
-export const JWT_STRATEGY = 'jwt' as const
+export const JWT_REFRESH_STRATEGY = 'jwt-refresh' as const
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, JWT_REFRESH_STRATEGY) {
     constructor(
         readonly configService: ConfigService,
         private readonly usersService: UsersService,
@@ -16,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: configService.getOrThrow<string>('jwt.secret'),
+            secretOrKey: configService.getOrThrow<string>('jwt.refreshSecret'),
         })
     }
 

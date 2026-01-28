@@ -29,21 +29,38 @@ export class SessionsService {
     }
 
     refreshToken(userId: string, username: string) {
-        return this.generateTokens(userId, username)
-    }
-
-    private generateTokens(userId: string, username: string) {
         const payload: JwtPayload = { id: userId, username }
 
+        const accessToken = this.generateAccessToken(payload)
+
+        return {
+            accessToken,
+        }
+    }
+
+    private generateAccessToken(payload: JwtPayload) {
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.getOrThrow<string>('jwt.secret'),
             expiresIn: this.configService.getOrThrow<string>('jwt.expiresIn') as StringValue,
         })
 
+        return accessToken
+    }
+
+    private generateRefreshToken(payload: JwtPayload) {
         const refreshToken = this.jwtService.sign(payload, {
             secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
             expiresIn: this.configService.getOrThrow<string>('jwt.refreshExpiresIn') as StringValue,
         })
+
+        return refreshToken
+    }
+
+    private generateTokens(userId: string, username: string) {
+        const payload: JwtPayload = { id: userId, username }
+
+        const accessToken = this.generateAccessToken(payload)
+        const refreshToken = this.generateRefreshToken(payload)
 
         return {
             accessToken,
