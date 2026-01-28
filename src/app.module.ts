@@ -13,7 +13,7 @@ import { UsersModule } from './modules/users/users.module'
         ConfigModule.forRoot({
             isGlobal: true,
             load: [commonConfig, databaseConfig, jwtConfig],
-            envFilePath: '.env',
+            envFilePath: ['.env', 'backend.env'],
         }),
 
         TypeOrmModule.forRootAsync({
