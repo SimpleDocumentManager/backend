@@ -9,7 +9,6 @@ async function bootstrap() {
     const configService = app.get(ConfigService)
 
     app.enableCors()
-    app.setGlobalPrefix('api')
     app.enableVersioning({
         type: VersioningType.URI,
         defaultVersion: '1',

@@ -5,6 +5,7 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { commonConfig, databaseConfig, jwtConfig } from './config'
 import { SessionsModule } from './modules/sessions/sessions.module'
+import { StoragesModule } from './modules/storages/storages.module'
 import { UsersModule } from './modules/users/users.module'
 
 @Module({
@@ -32,6 +33,7 @@ import { UsersModule } from './modules/users/users.module'
 
         UsersModule,
         SessionsModule,
+        StoragesModule,
     ],
     controllers: [AppController],
     providers: [AppService],

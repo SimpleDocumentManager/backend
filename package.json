@@ -23,6 +23,7 @@
         "prepare": "husky || true",
         "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
         "migration:generate": "npm run typeorm --  -d ./src/data-source.ts migration:generate -p ./src/db/migrations/$npm_config_name",
+        "migration:revert": "npm run typeorm --  -d ./src/data-source.ts migration:revert",
         "migrate": "npm run typeorm --  -d ./src/data-source.ts migration:run"
     },
     "dependencies": {
