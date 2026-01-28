@@ -9,3 +9,8 @@ npm run format:check || (
     echo "Format check failed. Please run 'npm run format' to fix the issues."
     exit 1
 )
+
+npm run test || (
+    echo "Test failed. Please fix the issues."
+    exit 1
+)
