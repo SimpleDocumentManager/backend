@@ -1,4 +1,10 @@
-import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import {
+    ConflictException,
+    ForbiddenException,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Response } from 'express'
@@ -36,6 +42,16 @@ export class StoragesService {
     }
 
     async createFolder(dto: CreateFolderDto): Promise<Storage> {
+        const existingFolder = await this.storageRepository.exists({
+            where: {
+                folder: dto.dir,
+                filename: dto.name,
+            },
+        })
+        if (existingFolder) {
+            throw new ConflictException('Folder is already existed')
+        }
+
         return this.dataSource.transaction(async (manager) => {
             const path = sanitizePath(`${dto.dir}/${dto.name}`)
 
@@ -64,7 +80,14 @@ export class StoragesService {
                 where: { filename: file.originalname, folder: dto.dir },
             })
 
-            if (!storage) {
+            if (storage) {
+                if (storage.isFolder) {
+                    throw new ConflictException('File/Folder is already existed')
+                }
+
+                storage.size = file.size
+                storage.fullUrl = `${this.storageUrl}${path}`
+            } else {
                 storage = manager.create(Storage, {
                     filename: file.originalname,
                     folder: dto.dir,
@@ -73,9 +96,6 @@ export class StoragesService {
                     isFolder: false,
                     size: file.size,
                 })
-            } else {
-                storage.size = file.size
-                storage.fullUrl = `${this.storageUrl}${path}`
             }
 
             const savedStorage = await manager.save(storage)
