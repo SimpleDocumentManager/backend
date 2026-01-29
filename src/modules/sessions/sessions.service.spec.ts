@@ -3,7 +3,7 @@ import { SessionsService } from './sessions.service'
 import { UsersService } from '../users/users.service'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import { UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { LoginDto } from './dto/login.dto'
 import { User } from '../users/entities/user.entity'
 
@@ -69,19 +69,19 @@ describe('SessionsService', () => {
             expect(result).toHaveProperty('refreshToken')
         })
 
-        it('should throw UnauthorizedException if user not found', async () => {
+        it('should throw NotFoundException if user not found', async () => {
             mockUsersService.findByUsername.mockResolvedValue(null)
 
-            await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException)
+            await expect(service.login(loginDto)).rejects.toThrow(NotFoundException)
             expect(mockUsersService.findByUsername).toHaveBeenCalledWith(loginDto.username)
             expect(mockUsersService.validatePassword).not.toHaveBeenCalled()
         })
 
-        it('should throw UnauthorizedException if password is invalid', async () => {
+        it('should throw BadRequestException if password is invalid', async () => {
             mockUsersService.findByUsername.mockResolvedValue(mockUser)
             mockUsersService.validatePassword.mockResolvedValue(false)
 
-            await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException)
+            await expect(service.login(loginDto)).rejects.toThrow(BadRequestException)
             expect(mockUsersService.findByUsername).toHaveBeenCalledWith(loginDto.username)
             expect(mockUsersService.validatePassword).toHaveBeenCalledWith(loginDto.password, mockUser.password)
         })

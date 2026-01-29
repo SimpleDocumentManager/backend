@@ -15,12 +15,16 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
+            ignoreExpiration: true,
             secretOrKey: configService.getOrThrow<string>('jwt.secret'),
         })
     }
 
     async validate(payload: JwtPayload) {
+        if (payload.exp && Date.now() > payload.exp * 1000) {
+            throw new UnauthorizedException('Token expired, please refresh your token')
+        }
+
         const user = await this.usersService.findById(payload.id)
         if (!user) {
             throw new UnauthorizedException()

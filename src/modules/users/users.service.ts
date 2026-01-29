@@ -12,7 +12,10 @@ export class UsersService {
     ) {}
 
     async findByUsername(username: string): Promise<User | null> {
-        return this.userRepository.findOne({ where: { username } })
+        return this.userRepository.findOne({
+            where: { username },
+            select: { id: true, username: true, password: true },
+        })
     }
 
     async findById(id: string): Promise<User | null> {

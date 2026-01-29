@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { StringValue } from 'ms'
@@ -17,12 +17,12 @@ export class SessionsService {
     async login(dto: LoginDto) {
         const user = await this.usersService.findByUsername(dto.username)
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials')
+            throw new NotFoundException('User not found')
         }
 
         const isPasswordValid = await this.usersService.validatePassword(dto.password, user.password)
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials')
+            throw new BadRequestException('Password invalid')
         }
 
         return this.generateTokens(user.id, user.username)

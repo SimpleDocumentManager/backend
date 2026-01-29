@@ -4,6 +4,7 @@ import { JwtAuthGuard, JwtRefreshAuthGuard } from 'src/modules/sessions/guards/j
 import { User } from 'src/modules/users/entities/user.entity'
 import { CurrentUser } from './decorators'
 import { SessionsService } from './sessions.service'
+import { formatResponse } from 'src/utils/response'
 
 @Controller('sessions')
 export class SessionsController {
@@ -11,20 +12,22 @@ export class SessionsController {
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    login(@Body() loginDto: LoginDto) {
-        return this.sessionsService.login(loginDto)
+    async login(@Body() loginDto: LoginDto) {
+        const data = await this.sessionsService.login(loginDto)
+        return formatResponse(data)
     }
 
     @Get('me')
     @JwtAuthGuard()
     getProfile(@CurrentUser() user: User) {
-        return user
+        return formatResponse(user)
     }
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
     @JwtRefreshAuthGuard()
     refresh(@CurrentUser() user: User) {
-        return this.sessionsService.refreshToken(user.id, user.username)
+        const data = this.sessionsService.refreshToken(user.id, user.username)
+        return formatResponse(data)
     }
 }
