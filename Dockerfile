@@ -18,6 +18,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN mkdir -p /app/storage
+RUN chown -R node:node /app/storage
+
 USER node
 
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
